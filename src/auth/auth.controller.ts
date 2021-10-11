@@ -29,6 +29,7 @@ import {
   UserResponse,
 } from 'src/models/user.model';
 import { UserService } from 'src/user/user.service';
+import { AuthMessageDTO, AuthMessageResponse } from '../models/auth.model';
 import { AuthService } from './auth.service';
 import { JwtRefreshGuard } from './jwt-refresh.guard';
 
@@ -93,5 +94,15 @@ export class AuthController {
   ): Promise<ResponseObject<'user', UserResponse>> {
     const user = await this.authService.register(credentials);
     return { user };
+  }
+
+  @Public()
+  @Post('/send-sms')
+  @ApiCreatedResponse({ description: 'Authentication SMS' })
+  async sendSms(
+    @Body() authBody: AuthMessageDTO,
+  ): Promise<AuthMessageResponse> {
+    const phoneNumber = await this.authService.sendSMS(authBody.phoneNumber);
+    return { phoneNumber };
   }
 }

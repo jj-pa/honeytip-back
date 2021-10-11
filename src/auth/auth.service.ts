@@ -9,6 +9,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import axios from 'axios';
+import * as crypto from 'crypto';
 import { UserService } from 'src/user/user.service';
 import {
   LoginDTO,
@@ -97,5 +99,65 @@ export class AuthService {
   async postVerifyCode() {
     const value = await this.cacheManager.get('key');
     await this.cacheManager.set('key', 'value', { ttl: 1000 });
+  }
+
+  private makeSignature(): string {
+    const message = [];
+    const hmac = crypto.createHmac(
+      'sha256',
+      this.configService.get('NCP_USER_SECRET_KEY'),
+    );
+    const space = ' ';
+    const newLine = '\n';
+    const method = 'POST';
+    const timestamp = Date.now().toString();
+
+    message.push(method);
+    message.push(space);
+    message.push(this.configService.get('NCP_SMS_URI'));
+    message.push(newLine);
+    message.push(timestamp);
+    message.push(newLine);
+    message.push(this.configService.get('NCP_USER_ACCESS_KEY'));
+
+    // base64 인코딩
+    const signature = hmac.update(message.join('')).digest('base64');
+    return signature.toString();
+  }
+
+  async sendSMS(phoneNumber: string): Promise<string> {
+    const body = {
+      type: 'SMS',
+      contentType: 'COMM',
+      countryCode: '82',
+      from: this.configService.get('NCP_SMS_HOST_NUMBER'),
+      content: '문자 내용',
+      messages: [
+        {
+          to: phoneNumber,
+        },
+      ],
+    };
+
+    const options = {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'x-ncp-apigw-timestamp': Date.now().toString(),
+        'x-ncp-iam-access-key': this.configService.get('NCP_USER_ACCESS_KEY'),
+        'x-ncp-apigw-signature-v2': this.makeSignature(),
+      },
+    };
+
+    axios
+      .post(this.configService.get('NCP_SMS_URL'), body, options)
+      .then(async (res) => {
+        console.log(res.data);
+      })
+      .catch((err) => {
+        console.error(err.response.data);
+        throw new InternalServerErrorException();
+      });
+
+    return phoneNumber;
   }
 }
