@@ -102,7 +102,17 @@ export class AuthController {
   async sendSms(
     @Body() authBody: AuthMessageDTO,
   ): Promise<AuthMessageResponse> {
-    const phoneNumber = await this.authService.sendSMS(authBody.phoneNumber);
-    return { phoneNumber };
+    const { phoneNumber } = authBody;
+    this.authService.deleteCache(phoneNumber);
+    const authCode = await this.authService.sendSMS(phoneNumber);
+    this.authService.storeCache(phoneNumber, authCode);
+    return { phoneNumber, authCode };
+  }
+
+  @Public()
+  @Post('/check-sms')
+  @ApiCreatedResponse({ description: 'Check SMS' })
+  async checkSms() {
+    return;
   }
 }

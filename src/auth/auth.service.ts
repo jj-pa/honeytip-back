@@ -96,11 +96,6 @@ export class AuthService {
     return token;
   }
 
-  async postVerifyCode() {
-    const value = await this.cacheManager.get('key');
-    await this.cacheManager.set('key', 'value', { ttl: 1000 });
-  }
-
   private makeSignature(): string {
     const message = [];
     const hmac = crypto.createHmac(
@@ -125,13 +120,19 @@ export class AuthService {
     return signature.toString();
   }
 
-  async sendSMS(phoneNumber: string): Promise<string> {
+  async sendSMS(phoneNumber: string): Promise<number> {
+    let verifyCode;
+    for (let i = 0; i < 6; i++) {
+      verifyCode += Math.random() * 10;
+    }
+    const contentText = `인증번호는 [${verifyCode}]입니다.`;
+
     const body = {
       type: 'SMS',
       contentType: 'COMM',
       countryCode: '82',
       from: this.configService.get('NCP_SMS_HOST_NUMBER'),
-      content: '문자 내용',
+      content: contentText,
       messages: [
         {
           to: phoneNumber,
@@ -148,7 +149,7 @@ export class AuthService {
       },
     };
 
-    axios
+    await axios
       .post(this.configService.get('NCP_SMS_URL'), body, options)
       .then(async (res) => {
         console.log(res.data);
@@ -158,6 +159,14 @@ export class AuthService {
         throw new InternalServerErrorException();
       });
 
-    return phoneNumber;
+    return verifyCode;
+  }
+
+  storeCache(phoneNumber: string, authCode: number) {
+    this.cacheManager.set(phoneNumber, authCode);
+  }
+
+  deleteCache(phoneNumber: string) {
+    this.cacheManager.del(phoneNumber);
   }
 }

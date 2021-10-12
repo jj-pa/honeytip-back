@@ -9,4 +9,5 @@ export class AuthMessageDTO {
 
 export interface AuthMessageResponse {
   phoneNumber: string;
+  authCode: number;
 }
