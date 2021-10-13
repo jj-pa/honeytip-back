@@ -29,7 +29,11 @@ import {
   UserResponse,
 } from 'src/models/user.model';
 import { UserService } from 'src/user/user.service';
-import { AuthMessageDTO, AuthMessageResponse } from '../models/auth.model';
+import {
+  AuthCheckDTO,
+  AuthMessageDTO,
+  AuthMessageResponse,
+} from '../models/auth.model';
 import { AuthService } from './auth.service';
 import { JwtRefreshGuard } from './jwt-refresh.guard';
 
@@ -103,16 +107,21 @@ export class AuthController {
     @Body() authBody: AuthMessageDTO,
   ): Promise<AuthMessageResponse> {
     const { phoneNumber } = authBody;
-    this.authService.deleteCache(phoneNumber);
+    this.authService.deleteAuthCode(phoneNumber);
     const authCode = await this.authService.sendSMS(phoneNumber);
-    this.authService.storeCache(phoneNumber, authCode);
+    this.authService.storeAuthCode(phoneNumber, authCode);
     return { phoneNumber, authCode };
   }
 
   @Public()
   @Post('/check-sms')
   @ApiCreatedResponse({ description: 'Check SMS' })
-  async checkSms() {
-    return;
+  async checkSms(@Body() authBody: AuthCheckDTO) {
+    const { phoneNumber, authCode } = authBody;
+    const cacheAuthCode = await this.authService.getAuthCode(phoneNumber);
+    const isAuth = authCode === cacheAuthCode;
+    return {
+      isAuth,
+    };
   }
 }

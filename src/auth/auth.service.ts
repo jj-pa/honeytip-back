@@ -120,11 +120,8 @@ export class AuthService {
     return signature.toString();
   }
 
-  async sendSMS(phoneNumber: string): Promise<number> {
-    let verifyCode;
-    for (let i = 0; i < 6; i++) {
-      verifyCode += Math.random() * 10;
-    }
+  async sendSMS(phoneNumber: string): Promise<string> {
+    const verifyCode = this.getRandomNumber();
     const contentText = `인증번호는 [${verifyCode}]입니다.`;
 
     const body = {
@@ -162,11 +159,26 @@ export class AuthService {
     return verifyCode;
   }
 
-  storeCache(phoneNumber: string, authCode: number) {
+  storeAuthCode(phoneNumber: string, authCode: string) {
     this.cacheManager.set(phoneNumber, authCode);
   }
 
-  deleteCache(phoneNumber: string) {
+  deleteAuthCode(phoneNumber: string) {
     this.cacheManager.del(phoneNumber);
+  }
+
+  async getAuthCode(phoneNumber: string) {
+    return await this.cacheManager.get(phoneNumber);
+  }
+
+  getRandomNumber() {
+    const chars = '0123456789';
+    const stringLength = 4;
+    let randomNumber = '';
+    for (let i = 0; i < stringLength; i++) {
+      const rnum = Math.floor(Math.random() * chars.length);
+      randomNumber += chars.substring(rnum, rnum + 1);
+    }
+    return randomNumber;
   }
 }

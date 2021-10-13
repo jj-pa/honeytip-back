@@ -13,7 +13,7 @@ import { JwtRefreshStrategy } from './jwt-refresh.strategy';
     UserModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     CacheModule.register({
-      ttl: 5,
+      ttl: 120,
       max: 100,
     }),
     ConfigModule,

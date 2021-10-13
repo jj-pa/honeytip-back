@@ -7,7 +7,13 @@ export class AuthMessageDTO {
   phoneNumber: string;
 }
 
+export class AuthCheckDTO extends AuthMessageDTO {
+  @IsString()
+  @ApiProperty()
+  authCode: string;
+}
+
 export interface AuthMessageResponse {
   phoneNumber: string;
-  authCode: number;
+  authCode: string;
 }
