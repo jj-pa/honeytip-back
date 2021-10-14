@@ -22,7 +22,6 @@ import { UserModule } from './user/user.module';
         NCP_USER_SECRET_KEY: Joi.string().required(),
         NCP_SMS_URL: Joi.string().required(),
         NCP_SMS_URI: Joi.string().required(),
-        NCP_SMS_ID: Joi.string().required(),
         NCP_SMS_HOST_NUMBER: Joi.string().required(),
       }),
     }),

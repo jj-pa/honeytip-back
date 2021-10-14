@@ -21,7 +21,6 @@ import {
 } from 'src/interceptors/transform.interceptor';
 import { ResponseObject } from 'src/models/response.model';
 import {
-  AuthResponse,
   LoginBody,
   LoginDTO,
   RegisterBody,
@@ -52,22 +51,21 @@ export class AuthController {
   @ApiBody({ type: LoginBody })
   async login(
     @Body('user', ValidationPipe) credentials: LoginDTO,
-  ): Promise<CommonResponse<AuthResponse>> {
+  ): Promise<CommonResponse> {
     const user = await this.authService.validateUser(credentials);
 
     const accessToken = this.authService.getJwtAccessToken(user.username);
     const refreshToken = this.authService.getJwtRefreshToken(user.username);
 
     await this.userService.setCurrentRefreshToken(refreshToken, user.id);
-    return {
-      data: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        accessToken,
-        refreshToken,
-      },
-    };
+
+    return CommonResponse.success({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      accessToken,
+      refreshToken,
+    });
   }
 
   @Public()
