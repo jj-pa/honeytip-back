@@ -15,12 +15,10 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public';
+import { TransformInterceptor } from 'src/interceptors/transform.interceptor';
+import { CommonResponse } from 'src/models/response.model';
 import {
-  CommonResponse,
-  TransformInterceptor,
-} from 'src/interceptors/transform.interceptor';
-import { ResponseObject } from 'src/models/response.model';
-import {
+  AuthResponse,
   LoginBody,
   LoginDTO,
   RegisterBody,
@@ -51,15 +49,14 @@ export class AuthController {
   @ApiBody({ type: LoginBody })
   async login(
     @Body('user', ValidationPipe) credentials: LoginDTO,
-  ): Promise<CommonResponse> {
+  ): Promise<CommonResponse<AuthResponse>> {
     const user = await this.authService.validateUser(credentials);
-
     const accessToken = this.authService.getJwtAccessToken(user.username);
     const refreshToken = this.authService.getJwtRefreshToken(user.username);
 
     await this.userService.setCurrentRefreshToken(refreshToken, user.id);
 
-    return CommonResponse.success({
+    return CommonResponse.success<AuthResponse>({
       id: user.id,
       email: user.email,
       username: user.username,
@@ -81,45 +78,56 @@ export class AuthController {
   @Get('/refresh')
   @UseInterceptors(TransformInterceptor)
   @UseGuards(JwtRefreshGuard)
-  async refresh(@Req() req) {
+  async refresh(@Req() req): Promise<CommonResponse<any>> {
     const user = req.user;
     const accessToken = this.authService.getJwtAccessToken(user.username);
-    return { data: { ...user, accessToken } };
+
+    return CommonResponse.success<any>({
+      ...user,
+      accessToken,
+    });
   }
 
   @Public()
   @Post('/signup')
   @ApiCreatedResponse({ description: 'User registration' })
   @ApiBody({ type: RegisterBody })
+  @UseInterceptors(TransformInterceptor)
   async register(
     @Body('user', ValidationPipe) credentials: RegisterDTO,
-  ): Promise<ResponseObject<'user', UserResponse>> {
+  ): Promise<CommonResponse<UserResponse>> {
     const user = await this.authService.register(credentials);
-    return { user };
+
+    return CommonResponse.success<UserResponse>(user);
   }
 
   @Public()
   @Post('/send-sms')
   @ApiCreatedResponse({ description: 'Authentication SMS' })
+  @UseInterceptors(TransformInterceptor)
   async sendSms(
     @Body() authBody: AuthMessageDTO,
-  ): Promise<AuthMessageResponse> {
+  ): Promise<CommonResponse<AuthMessageResponse>> {
     const { phoneNumber } = authBody;
     this.authService.deleteAuthCode(phoneNumber);
     const authCode = await this.authService.sendSMS(phoneNumber);
     this.authService.storeAuthCode(phoneNumber, authCode);
-    return { phoneNumber, authCode };
+
+    return CommonResponse.success<AuthMessageResponse>({
+      phoneNumber,
+      authCode,
+    });
   }
 
   @Public()
   @Post('/check-sms')
   @ApiCreatedResponse({ description: 'Check SMS' })
-  async checkSms(@Body() authBody: AuthCheckDTO) {
+  @UseInterceptors(TransformInterceptor)
+  async checkSms(@Body() authBody: AuthCheckDTO): Promise<CommonResponse<any>> {
     const { phoneNumber, authCode } = authBody;
     const cacheAuthCode = await this.authService.getAuthCode(phoneNumber);
     const isAuth = authCode === cacheAuthCode;
-    return {
-      isAuth,
-    };
+
+    return CommonResponse.success<any>(isAuth);
   }
 }

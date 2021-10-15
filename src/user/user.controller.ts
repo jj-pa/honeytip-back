@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Put,
+  UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
 import {
@@ -12,7 +13,8 @@ import {
   ApiOkResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ResponseObject } from 'src/models/response.model';
+import { TransformInterceptor } from 'src/interceptors/transform.interceptor';
+import { CommonResponse } from 'src/models/response.model';
 import {
   UpdateUserBody,
   UpdateUserDTO,
@@ -29,11 +31,13 @@ export class UserController {
   @ApiOkResponse({ description: 'Current user' })
   @ApiUnauthorizedResponse()
   @Get('/:username')
+  @UseInterceptors(TransformInterceptor)
   async findCurrentUser(
     @Param('username') username: string,
-  ): Promise<ResponseObject<'user', UserResponse>> {
+  ): Promise<CommonResponse<UserResponse>> {
     const user = await this.userService.findByUsername(username);
-    return { user };
+
+    return CommonResponse.success<UserResponse>(user);
   }
 
   @ApiBearerAuth()
@@ -41,12 +45,14 @@ export class UserController {
   @ApiUnauthorizedResponse()
   @ApiBody({ type: UpdateUserBody })
   @Put()
+  @UseInterceptors(TransformInterceptor)
   async update(
     @User() { username }: UserEntity,
     @Body('user', new ValidationPipe({ transform: true, whitelist: true }))
     data: UpdateUserDTO,
-  ): Promise<ResponseObject<'user', UserResponse>> {
+  ): Promise<CommonResponse<UserResponse>> {
     const user = await this.userService.update(username, data);
-    return { user };
+
+    return CommonResponse.success<UserResponse>(user);
   }
 }
