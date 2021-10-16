@@ -17,7 +17,7 @@ export class LoginDTO {
   @IsString()
   @MinLength(4)
   @ApiProperty()
-  id: string;
+  email: string;
 
   @IsString()
   @MinLength(4)
@@ -32,12 +32,22 @@ export class LoginBody {
 
 export class LogoutDTO {
   @IsString()
-  id: string;
+  email: string;
 }
 
 export class LogoutBody {
   @ApiProperty()
   user: LogoutDTO;
+}
+
+export class RefreshTokenDTO {
+  @IsString()
+  email: string;
+}
+
+export class RefreshTokenBody {
+  @ApiProperty()
+  user: RefreshTokenDTO;
 }
 
 export class RegisterDTO extends LoginDTO {
@@ -83,16 +93,19 @@ export class UpdateUserBody {
 }
 
 export interface AuthPayload {
-  id: string;
+  email: string;
 }
 
 export interface UserResponse {
-  id: string;
   email: string;
   username: string;
 }
 
-export interface AuthResponse extends UserResponse {
+export interface LoginResponse extends UserResponse {
   accessToken: string;
   refreshToken: string;
+}
+
+export interface RefreshTokenResponse extends AuthPayload {
+  accessToken: string;
 }

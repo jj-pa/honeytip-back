@@ -8,10 +8,6 @@ import { AbstractEntity } from './abstract-entity';
 @Entity('users')
 export class UserEntity extends AbstractEntity {
   @Column({ unique: true })
-  @IsString()
-  id: string;
-
-  @Column({ unique: true })
   @IsEmail()
   email: string;
 

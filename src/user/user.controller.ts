@@ -28,6 +28,11 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private userService: UserService) {}
 
+  /**
+   * @GET /user/:username
+   * @param username
+   * @returns
+   */
   @ApiOkResponse({ description: 'Current user' })
   @ApiUnauthorizedResponse()
   @Get('/:username')
@@ -40,6 +45,12 @@ export class UserController {
     return CommonResponse.success<UserResponse>(user);
   }
 
+  /**
+   * @PUT /user
+   * @param param0
+   * @param data
+   * @returns
+   */
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'Update current user' })
   @ApiUnauthorizedResponse()

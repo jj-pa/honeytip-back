@@ -30,9 +30,9 @@ export class AuthService {
   ) {}
 
   // 사용자 이메일/패스워드 체크
-  async validateUser({ id, password }: LoginDTO): Promise<UserResponse> {
+  async validateUser({ email, password }: LoginDTO): Promise<UserResponse> {
     try {
-      const user = await this.userService.findById(id);
+      const user = await this.userService.findByEmail(email);
       const isValid = await user.comparePassword(password);
       if (!isValid) {
         throw new UnauthorizedException('Invalid credentials');
@@ -63,6 +63,7 @@ export class AuthService {
     return user;
   }
 
+  // 사용자 정보 수정
   async updateUser(
     username: string,
     data: UpdateUserDTO,
@@ -72,8 +73,8 @@ export class AuthService {
   }
 
   // Access Token 생성 반환
-  getJwtAccessToken(username: string) {
-    const payload = { username };
+  getJwtAccessToken(email: string) {
+    const payload = { email };
     const token = this.jwtService.sign(payload, {
       secret: this.configService.get('JWT_ACCESS_TOKEN_SECRET'),
       expiresIn: `${this.configService.get(
@@ -84,8 +85,8 @@ export class AuthService {
   }
 
   // Refresh Token 생성 반환
-  getJwtRefreshToken(username: string) {
-    const payload = { username };
+  getJwtRefreshToken(email: string) {
+    const payload = { email };
     const token = this.jwtService.sign(payload, {
       secret: this.configService.get('JWT_REFRESH_TOKEN_SECRET'),
       expiresIn: `${this.configService.get(
@@ -96,6 +97,7 @@ export class AuthService {
     return token;
   }
 
+  // NCP SMS Signature 생성
   private makeSignature(): string {
     const message = [];
     const hmac = crypto.createHmac(
@@ -120,8 +122,9 @@ export class AuthService {
     return signature.toString();
   }
 
+  // NCP SMS 전송 요청
   async sendSMS(phoneNumber: string): Promise<string> {
-    const verifyCode = this.getRandomNumber();
+    const verifyCode = this.makeAuthCode();
     const contentText = `인증번호는 [${verifyCode}]입니다.`;
 
     const body = {
@@ -159,23 +162,27 @@ export class AuthService {
     return verifyCode;
   }
 
+  // 인증코드 저장
   storeAuthCode(phoneNumber: string, authCode: string) {
     this.cacheManager.set(phoneNumber, authCode);
   }
 
+  // 인증코드 삭제
   deleteAuthCode(phoneNumber: string) {
     this.cacheManager.del(phoneNumber);
   }
 
+  // 인증코드 조회
   async getAuthCode(phoneNumber: string) {
     return await this.cacheManager.get(phoneNumber);
   }
 
-  getRandomNumber() {
+  // 인증코드 생성
+  makeAuthCode() {
     const chars = '0123456789';
-    const stringLength = 4;
+    const length = 4;
     let randomNumber = '';
-    for (let i = 0; i < stringLength; i++) {
+    for (let i = 0; i < length; i++) {
       const rnum = Math.floor(Math.random() * chars.length);
       randomNumber += chars.substring(rnum, rnum + 1);
     }

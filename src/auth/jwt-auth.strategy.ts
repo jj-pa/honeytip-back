@@ -22,8 +22,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   // DB에 사용자 조회하여 확인한다.
-  async validate({ id }: AuthPayload) {
-    const user = this.userService.findById(id);
+  async validate({ email }: AuthPayload) {
+    const user = this.userService.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException();
     }

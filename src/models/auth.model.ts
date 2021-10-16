@@ -13,7 +13,12 @@ export class AuthCheckDTO extends AuthMessageDTO {
   authCode: string;
 }
 
-export interface AuthMessageResponse {
+export interface SendMessageResponse {
   phoneNumber: string;
   authCode: string;
+}
+
+export interface AuthResultResponse {
+  phoneNumber: string;
+  authResult: boolean;
 }

@@ -38,17 +38,11 @@ export class UserService {
     }
   }
 
-  async removeRefreshToken(id: string) {
-    const user = await this.userRepository.findOne({ where: { id } });
+  async removeRefreshToken(email: string) {
+    const user = await this.userRepository.findOne({ where: { email } });
     user.currentHashedRefreshToken = null;
     await this.userRepository.save(user);
     return user.toJSON();
-  }
-
-  async findById(id: string): Promise<UserEntity> {
-    return await this.userRepository.findOne({
-      where: { id },
-    });
   }
 
   async findByUsername(username: string): Promise<UserResponse> {
@@ -59,12 +53,10 @@ export class UserService {
     ).toJSON();
   }
 
-  async findByEmail(email: string): Promise<UserResponse> {
-    return (
-      await this.userRepository.findOne({
-        where: { email },
-      })
-    ).toJSON();
+  async findByEmail(email: string): Promise<UserEntity> {
+    return await this.userRepository.findOne({
+      where: { email },
+    });
   }
 
   async create(registerDTO: RegisterDTO): Promise<UserEntity> {
@@ -75,11 +67,14 @@ export class UserService {
     }
   }
 
-  async update(id: string, updateUserDTO: UpdateUserDTO): Promise<UserEntity> {
-    await this.userRepository.update({ id }, updateUserDTO);
-    const user = await this.userRepository.findOne({ where: { id } });
+  async update(
+    email: string,
+    updateUserDTO: UpdateUserDTO,
+  ): Promise<UserEntity> {
+    await this.userRepository.update({ email }, updateUserDTO);
+    const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
-      throw new NotFoundException(`User #${id} not found`);
+      throw new NotFoundException(`User #${email} not found`);
     }
     return user;
   }

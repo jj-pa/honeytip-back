@@ -3,7 +3,6 @@ import {
   Controller,
   Get,
   Post,
-  Req,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
@@ -18,9 +17,10 @@ import { Public } from 'src/decorators/public';
 import { TransformInterceptor } from 'src/interceptors/transform.interceptor';
 import { CommonResponse } from 'src/models/response.model';
 import {
-  AuthResponse,
   LoginBody,
   LoginDTO,
+  LoginResponse,
+  RefreshTokenResponse,
   RegisterBody,
   RegisterDTO,
   UserResponse,
@@ -29,8 +29,10 @@ import { UserService } from 'src/user/user.service';
 import {
   AuthCheckDTO,
   AuthMessageDTO,
-  AuthMessageResponse,
+  AuthResultResponse,
+  SendMessageResponse,
 } from '../models/auth.model';
+import { LogoutDTO, RefreshTokenDTO } from '../models/user.model';
 import { AuthService } from './auth.service';
 import { JwtRefreshGuard } from './jwt-refresh.guard';
 
@@ -41,23 +43,26 @@ export class AuthController {
     private userService: UserService,
   ) {}
 
+  /**
+   * @POST /auth/login
+   * @param credentials
+   * @returns
+   */
   @Public()
   @Post('/login')
   @ApiOkResponse({ description: 'User Login' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-  @UseInterceptors(TransformInterceptor)
   @ApiBody({ type: LoginBody })
+  @UseInterceptors(TransformInterceptor)
   async login(
     @Body('user', ValidationPipe) credentials: LoginDTO,
-  ): Promise<CommonResponse<AuthResponse>> {
-    const user = await this.authService.validateUser(credentials);
-    const accessToken = this.authService.getJwtAccessToken(user.username);
-    const refreshToken = this.authService.getJwtRefreshToken(user.username);
+  ): Promise<CommonResponse<LoginResponse>> {
+    const user = await this.authService.validateUser(credentials); // Validate email and password
+    const accessToken = this.authService.getJwtAccessToken(user.email); // Access token
+    const refreshToken = this.authService.getJwtRefreshToken(user.email); // Refresh token
+    await this.userService.setCurrentRefreshToken(refreshToken, user.email); // Save refresh token
 
-    await this.userService.setCurrentRefreshToken(refreshToken, user.id);
-
-    return CommonResponse.success<AuthResponse>({
-      id: user.id,
+    return CommonResponse.success<LoginResponse>({
       email: user.email,
       username: user.username,
       accessToken,
@@ -65,69 +70,105 @@ export class AuthController {
     });
   }
 
+  /**
+   * @POST /auth/logout
+   * @param req
+   */
   @Public()
   @Post('/logout')
   @UseGuards(JwtRefreshGuard)
   @ApiOkResponse({ description: 'User Logout' })
-  async logOut(@Req() req) {
-    const { username } = req.user;
-    await this.userService.removeRefreshToken(username);
+  @UseInterceptors(TransformInterceptor)
+  async logOut(
+    @Body('user', ValidationPipe) body: LogoutDTO,
+  ): Promise<CommonResponse<null>> {
+    const { email } = body;
+    await this.userService.removeRefreshToken(email);
+    return CommonResponse.success(null);
   }
 
+  /**
+   * @GET /auth/refresh-token
+   * @param req
+   * @returns
+   */
   @Public()
-  @Get('/refresh')
-  @UseInterceptors(TransformInterceptor)
+  @Get('/refresh-token')
   @UseGuards(JwtRefreshGuard)
-  async refresh(@Req() req): Promise<CommonResponse<any>> {
-    const user = req.user;
-    const accessToken = this.authService.getJwtAccessToken(user.username);
+  @ApiOkResponse({ description: 'Refresh token' })
+  @UseInterceptors(TransformInterceptor)
+  async refresh(
+    @Body('user', ValidationPipe) body: RefreshTokenDTO,
+  ): Promise<CommonResponse<RefreshTokenResponse>> {
+    const { email } = body;
+    const accessToken = this.authService.getJwtAccessToken(email);
 
-    return CommonResponse.success<any>({
-      ...user,
+    return CommonResponse.success<RefreshTokenResponse>({
+      email,
       accessToken,
     });
   }
 
+  /**
+   * @POST /auth/signup
+   * @param credentials
+   * @returns
+   */
   @Public()
   @Post('/signup')
   @ApiCreatedResponse({ description: 'User registration' })
   @ApiBody({ type: RegisterBody })
   @UseInterceptors(TransformInterceptor)
   async register(
-    @Body('user', ValidationPipe) credentials: RegisterDTO,
+    @Body('user', ValidationPipe) body: RegisterDTO,
   ): Promise<CommonResponse<UserResponse>> {
-    const user = await this.authService.register(credentials);
+    const user = await this.authService.register(body);
 
     return CommonResponse.success<UserResponse>(user);
   }
 
+  /**
+   * @POST /auth/send-sms-code
+   * @param authBody
+   * @returns
+   */
   @Public()
-  @Post('/send-sms')
+  @Post('/send-sms-code')
   @ApiCreatedResponse({ description: 'Authentication SMS' })
   @UseInterceptors(TransformInterceptor)
   async sendSms(
-    @Body() authBody: AuthMessageDTO,
-  ): Promise<CommonResponse<AuthMessageResponse>> {
-    const { phoneNumber } = authBody;
+    @Body('auth', ValidationPipe) body: AuthMessageDTO,
+  ): Promise<CommonResponse<SendMessageResponse>> {
+    const { phoneNumber } = body;
     this.authService.deleteAuthCode(phoneNumber);
     const authCode = await this.authService.sendSMS(phoneNumber);
     this.authService.storeAuthCode(phoneNumber, authCode);
 
-    return CommonResponse.success<AuthMessageResponse>({
+    return CommonResponse.success<SendMessageResponse>({
       phoneNumber,
       authCode,
     });
   }
 
+  /**
+   * @POST /auth/validate-sms-code
+   * @param authBody
+   * @returns
+   */
   @Public()
-  @Post('/check-sms')
-  @ApiCreatedResponse({ description: 'Check SMS' })
+  @Post('/validate-sms-code')
+  @ApiCreatedResponse({ description: 'Validate SMS' })
   @UseInterceptors(TransformInterceptor)
-  async checkSms(@Body() authBody: AuthCheckDTO): Promise<CommonResponse<any>> {
-    const { phoneNumber, authCode } = authBody;
+  async checkSms(
+    @Body('auth', ValidationPipe) body: AuthCheckDTO,
+  ): Promise<CommonResponse<AuthResultResponse>> {
+    const { phoneNumber, authCode } = body;
     const cacheAuthCode = await this.authService.getAuthCode(phoneNumber);
-    const isAuth = authCode === cacheAuthCode;
+    const authResult = authCode === cacheAuthCode;
 
-    return CommonResponse.success<any>(isAuth);
+    return CommonResponse.success<AuthResultResponse>({
+      phoneNumber,
+      authResult,
+    });
   }
 }
