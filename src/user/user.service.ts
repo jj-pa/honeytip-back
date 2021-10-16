@@ -21,16 +21,16 @@ export class UserService {
     private userRepository: Repository<UserEntity>,
   ) {}
 
-  async setCurrentRefreshToken(refreshToken: string, id: string) {
+  async setCurrentRefreshToken(refreshToken: string, email: string) {
     const currentHashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.userRepository.findOne({ where: { email } });
 
     user.currentHashedRefreshToken = currentHashedRefreshToken;
     await this.userRepository.save(user);
   }
 
-  async getUserIfRefreshTokenMatches(refreshToken: string, username: string) {
-    const user = await this.userRepository.findOne({ where: { username } });
+  async getUserIfRefreshTokenMatches(refreshToken: string, email: string) {
+    const user = await this.userRepository.findOne({ where: { email } });
     const isRefreeshTokenMaching = await user.compareRefreshToken(refreshToken);
 
     if (isRefreeshTokenMaching) {

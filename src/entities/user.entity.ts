@@ -19,6 +19,9 @@ export class UserEntity extends AbstractEntity {
   @Exclude()
   password: string;
 
+  @Column()
+  phoneNumber: string;
+
   @Column({ nullable: true })
   @Exclude()
   currentHashedRefreshToken?: string;

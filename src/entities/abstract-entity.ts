@@ -7,7 +7,7 @@ import {
 
 export abstract class AbstractEntity extends BaseEntity {
   @PrimaryGeneratedColumn()
-  seq: number;
+  id: number;
 
   @CreateDateColumn()
   createdAt: Date;

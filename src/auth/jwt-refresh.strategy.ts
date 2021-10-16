@@ -29,7 +29,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
     const refreshToken = req?.headers?.refresh;
     return this.userService.getUserIfRefreshTokenMatches(
       refreshToken,
-      payload.username,
+      payload.email,
     );
   }
 }

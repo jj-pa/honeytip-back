@@ -20,6 +20,8 @@ import {
   LoginBody,
   LoginDTO,
   LoginResponse,
+  LogoutBody,
+  RefreshTokenBody,
   RefreshTokenResponse,
   RegisterBody,
   RegisterDTO,
@@ -27,7 +29,9 @@ import {
 } from 'src/models/user.model';
 import { UserService } from 'src/user/user.service';
 import {
+  AuthCheckBody,
   AuthCheckDTO,
+  AuthMessageBody,
   AuthMessageDTO,
   AuthResultResponse,
   SendMessageResponse,
@@ -44,7 +48,7 @@ export class AuthController {
   ) {}
 
   /**
-   * @POST /auth/login
+   * @POST /api/auth/login
    * @param credentials
    * @returns
    */
@@ -55,9 +59,9 @@ export class AuthController {
   @ApiBody({ type: LoginBody })
   @UseInterceptors(TransformInterceptor)
   async login(
-    @Body('user', ValidationPipe) credentials: LoginDTO,
+    @Body('user', ValidationPipe) body: LoginDTO,
   ): Promise<CommonResponse<LoginResponse>> {
-    const user = await this.authService.validateUser(credentials); // Validate email and password
+    const user = await this.authService.validateUser(body); // Validate email and password
     const accessToken = this.authService.getJwtAccessToken(user.email); // Access token
     const refreshToken = this.authService.getJwtRefreshToken(user.email); // Refresh token
     await this.userService.setCurrentRefreshToken(refreshToken, user.email); // Save refresh token
@@ -71,13 +75,14 @@ export class AuthController {
   }
 
   /**
-   * @POST /auth/logout
+   * @POST /api/auth/logout
    * @param req
    */
   @Public()
   @Post('/logout')
   @UseGuards(JwtRefreshGuard)
   @ApiOkResponse({ description: 'User Logout' })
+  @ApiBody({ type: LogoutBody })
   @UseInterceptors(TransformInterceptor)
   async logOut(
     @Body('user', ValidationPipe) body: LogoutDTO,
@@ -88,7 +93,7 @@ export class AuthController {
   }
 
   /**
-   * @GET /auth/refresh-token
+   * @GET /api/auth/refresh-token
    * @param req
    * @returns
    */
@@ -96,6 +101,7 @@ export class AuthController {
   @Get('/refresh-token')
   @UseGuards(JwtRefreshGuard)
   @ApiOkResponse({ description: 'Refresh token' })
+  @ApiBody({ type: RefreshTokenBody })
   @UseInterceptors(TransformInterceptor)
   async refresh(
     @Body('user', ValidationPipe) body: RefreshTokenDTO,
@@ -110,7 +116,7 @@ export class AuthController {
   }
 
   /**
-   * @POST /auth/signup
+   * @POST /api/auth/signup
    * @param credentials
    * @returns
    */
@@ -128,13 +134,14 @@ export class AuthController {
   }
 
   /**
-   * @POST /auth/send-sms-code
+   * @POST /api/auth/send-sms-code
    * @param authBody
    * @returns
    */
   @Public()
   @Post('/send-sms-code')
   @ApiCreatedResponse({ description: 'Authentication SMS' })
+  @ApiBody({ type: AuthMessageBody })
   @UseInterceptors(TransformInterceptor)
   async sendSms(
     @Body('auth', ValidationPipe) body: AuthMessageDTO,
@@ -151,13 +158,14 @@ export class AuthController {
   }
 
   /**
-   * @POST /auth/validate-sms-code
+   * @POST /api/auth/validate-sms-code
    * @param authBody
    * @returns
    */
   @Public()
   @Post('/validate-sms-code')
   @ApiCreatedResponse({ description: 'Validate SMS' })
+  @ApiBody({ type: AuthCheckBody })
   @UseInterceptors(TransformInterceptor)
   async checkSms(
     @Body('auth', ValidationPipe) body: AuthCheckDTO,

@@ -14,7 +14,7 @@ import {
 } from 'class-validator';
 
 export class LoginDTO {
-  @IsString()
+  @IsEmail()
   @MinLength(4)
   @ApiProperty()
   email: string;
