@@ -23,6 +23,7 @@ import { UserModule } from './user/user.module';
         NCP_SMS_URL: Joi.string().required(),
         NCP_SMS_URI: Joi.string().required(),
         NCP_SMS_HOST_NUMBER: Joi.string().required(),
+        KAKAO_REST_KEY: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRootAsync({ useClass: DatabaseConnectionService }),

@@ -2,11 +2,15 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Post,
+  Query,
+  Res,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   ApiBody,
   ApiCreatedResponse,
@@ -15,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public';
 import { TransformInterceptor } from 'src/interceptors/transform.interceptor';
+import { KakaoLogin } from 'src/kakao.service';
 import { CommonResponse } from 'src/models/response.model';
 import {
   LoginBody,
@@ -36,6 +41,7 @@ import {
   AuthResultResponse,
   SendMessageResponse,
 } from '../models/auth.model';
+import { KakaoLoginBody, KakaoLoginDTO } from '../models/kakao.model';
 import { LogoutDTO, RefreshTokenDTO } from '../models/user.model';
 import { AuthService } from './auth.service';
 import { JwtRefreshGuard } from './jwt-refresh.guard';
@@ -45,6 +51,8 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private userService: UserService,
+    private configService: ConfigService,
+    private kakaoLoginService: KakaoLogin,
   ) {}
 
   /**
@@ -178,5 +186,136 @@ export class AuthController {
       phoneNumber,
       authResult,
     });
+  }
+
+  /**
+   * @GET /api/auth/kakao-login-sample-page
+   * @returns
+   */
+  @Public()
+  @Get('/kakao-login-sample-page')
+  @Header('Content-Type', 'text/html')
+  getKakaoLoginPage(): string {
+    return `
+      <div>
+        <h1>카카오 로그인</h1>
+
+        <form action="/api/auth/kakao-login-process" method="GET">
+          <input type="submit" value="카카오로그인" />
+        </form>
+
+        <form action="/api/auth/kakao-logout" method="GET">
+          <input type="submit" value="카카오로그아웃 및 연결 끊기" />
+        </form>
+      </div>
+    `;
+  }
+
+  /**
+   * @GET /api/auth/kakao-login-process
+   * @param res
+   * @returns
+   */
+  @Public()
+  @Get('/kakao-login-process')
+  @Header('Content-Type', 'text/html')
+  kakaoLoginProcess(@Res() res): void {
+    const kakaoApiKey = this.configService.get('KAKAO_REST_KEY');
+    const redirectUrl = 'http://localhost:5000/api/auth/kakao-login-redirect';
+    const url = `https://kauth.kakao.com/oauth/authorize?client_id=${kakaoApiKey}&redirect_uri=${redirectUrl}&response_type=code`;
+
+    return res.redirect(url);
+  }
+
+  /**
+   * @GET /api/auth/kakao-login-redirect
+   * @param query
+   * @param res
+   */
+  @Public()
+  @Get('/kakao-login-redirect')
+  @Header('Content-Type', 'text/html')
+  kakaoLoginRedirect(@Query('code') code: string, @Res() res): void {
+    const kakaoApiKey = this.configService.get('KAKAO_REST_KEY');
+    const redirectUrl = 'http://localhost:5000/api/auth/kakao-login-redirect';
+    const _hostName = `https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id=${kakaoApiKey}&redirect_uri=${redirectUrl}&code=${code}`;
+    const _headers = {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+      },
+    };
+
+    this.kakaoLoginService
+      .login(_hostName, _headers)
+      .then((e) => {
+        console.log(`TOKEN : ${e.data['access_token']}`);
+        this.kakaoLoginService.setToken(e.data['access_token']);
+        return res.send(`
+          <div>
+            <h2>축하합니다!</h2>
+            <p>카카오 로그인 성공하였습니다 :)</p>
+            <a href="/api/auth/kakao-login-sample-page">메인으로</a>
+          </div>
+        `);
+      })
+      .catch((err) => {
+        console.log(err);
+        return res.send('error');
+      });
+  }
+
+  /**
+   * @GET /api/auth/kakao-logout
+   * @param res
+   */
+  @Public()
+  @Get('/kakao-logout')
+  kakaoLogout(@Res() res): void {
+    console.log(`LOGOUT TOKEN : ${this.kakaoLoginService.accessToken}`);
+    this.kakaoLoginService
+      .logout()
+      .then((e) => {
+        return res.send(`
+        <div>
+          <h2>로그아웃 완료(토큰만료)</h2>
+          <a href="/api/auth/kakao-login-sample-page">메인 화면으로</a>
+        </div>
+      `);
+      })
+      .catch((e) => {
+        console.log(e);
+        return res.send('logout error');
+      });
+  }
+
+  @Public()
+  @Post('/kakao-login')
+  @ApiBody({ type: KakaoLoginBody })
+  async kakaoLogin(
+    @Body('kakao', ValidationPipe) body: KakaoLoginDTO,
+  ): Promise<CommonResponse<any>> {
+    const { token } = body;
+    console.log('token is ', token);
+
+    const kakaoApiKey = this.configService.get('KAKAO_REST_KEY');
+    const redirectUrl = 'http://localhost:5000/api/auth/kakao-login-redirect';
+    const _hostName = `https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id=${kakaoApiKey}&redirect_uri=${redirectUrl}&code=${token}`;
+    const _headers = {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+      },
+    };
+
+    this.kakaoLoginService
+      .login(_hostName, _headers)
+      .then((e) => {
+        console.log(`TOKEN : ${e.data['access_token']}`);
+        this.kakaoLoginService.setToken(e.data['access_token']);
+      })
+      .catch((err) => {
+        console.log('failed', err);
+      });
+
+    return CommonResponse.success<any>('success!!');
   }
 }

@@ -2,6 +2,7 @@ import { CacheModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { KakaoLogin } from 'src/kakao.service';
 import { UserModule } from 'src/user/user.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -30,7 +31,7 @@ import { JwtRefreshStrategy } from './jwt-refresh.strategy';
       }),
     }),
   ],
-  providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
+  providers: [AuthService, JwtStrategy, JwtRefreshStrategy, KakaoLogin],
   controllers: [AuthController],
   exports: [AuthService, PassportModule, JwtStrategy],
 })
