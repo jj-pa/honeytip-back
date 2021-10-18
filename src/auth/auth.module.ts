@@ -1,3 +1,4 @@
+import { HttpModule } from '@nestjs/axios';
 import { CacheModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -8,9 +9,14 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt-auth.strategy';
 import { JwtRefreshStrategy } from './jwt-refresh.strategy';
+import { KakaoAuthService } from './kakao-auth.service';
 
 @Module({
   imports: [
+    HttpModule.register({
+      timeout: 5000,
+      maxRedirects: 5,
+    }),
     UserModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     CacheModule.register({
@@ -31,7 +37,13 @@ import { JwtRefreshStrategy } from './jwt-refresh.strategy';
       }),
     }),
   ],
-  providers: [AuthService, JwtStrategy, JwtRefreshStrategy, KakaoLogin],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtRefreshStrategy,
+    KakaoLogin,
+    KakaoAuthService,
+  ],
   controllers: [AuthController],
   exports: [AuthService, PassportModule, JwtStrategy],
 })

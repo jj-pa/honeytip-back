@@ -1,5 +1,5 @@
 export class KakaoLoginDTO {
-  token: string;
+  accessToken: string;
 }
 
 export class KakaoLoginBody {
@@ -8,4 +8,15 @@ export class KakaoLoginBody {
 
 export interface KakaoLoginResponse {
   token: string;
+}
+
+export interface KakaoProfileResponse {
+  id: number;
+  kakao_account: {
+    profile: {
+      nickname: string;
+      profile_image_url: string;
+    };
+    email: string;
+  };
 }

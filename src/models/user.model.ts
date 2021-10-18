@@ -92,6 +92,13 @@ export class UpdateUserBody {
   user: UpdateUserDTO;
 }
 
+export interface IKakaoRegister {
+  email: string;
+  password: string;
+  username: string;
+  kakaoId: number;
+}
+
 export interface AuthPayload {
   email: string;
 }

@@ -20,6 +20,9 @@ export class UserEntity extends AbstractEntity {
   password: string;
 
   @Column()
+  kakaoId: number;
+
+  @Column({ nullable: true })
   phoneNumber: string;
 
   @Column({ nullable: true })

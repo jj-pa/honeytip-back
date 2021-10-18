@@ -13,6 +13,7 @@ import {
 } from 'src/models/user.model';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
+import { IKakaoRegister } from '../models/user.model';
 
 @Injectable()
 export class UserService {
@@ -59,9 +60,23 @@ export class UserService {
     });
   }
 
+  async findByKakaoId(kakaoId: number): Promise<UserEntity> {
+    return await this.userRepository.findOne({
+      where: { kakaoId },
+    });
+  }
+
   async create(registerDTO: RegisterDTO): Promise<UserEntity> {
     try {
       return await this.userRepository.create(registerDTO);
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async kakaoCreate(registerData: IKakaoRegister): Promise<UserEntity> {
+    try {
+      return await this.userRepository.create(registerData);
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }

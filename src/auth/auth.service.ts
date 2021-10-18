@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -13,6 +14,7 @@ import axios from 'axios';
 import * as crypto from 'crypto';
 import { UserService } from 'src/user/user.service';
 import {
+  IKakaoRegister,
   LoginDTO,
   RegisterDTO,
   UpdateUserDTO,
@@ -43,10 +45,39 @@ export class AuthService {
     }
   }
 
+  // 카카오 사용자 확인
+  async validateKakaoUser(kakaoId: number): Promise<UserResponse> {
+    try {
+      const user = await this.userService.findByKakaoId(kakaoId);
+      if (!user) {
+        throw new NotFoundException('Not found user');
+      }
+      return { ...user.toJSON() };
+    } catch (err) {
+      if (err instanceof NotFoundException) throw new NotFoundException();
+
+      throw new UnauthorizedException();
+    }
+  }
+
   // 회원가입
   async register(credentials: RegisterDTO): Promise<UserResponse> {
     try {
       const user = await this.userService.create(credentials);
+      await user.save();
+      return { ...user.toJSON() };
+    } catch (err) {
+      if (err.code === '23505') {
+        throw new ConflictException('Username has already been taken');
+      }
+      throw new InternalServerErrorException();
+    }
+  }
+
+  // 카카오 회원가입
+  async kakaoRegister(credentials: IKakaoRegister): Promise<UserResponse> {
+    try {
+      const user = await this.userService.kakaoCreate(credentials);
       await user.save();
       return { ...user.toJSON() };
     } catch (err) {
@@ -187,5 +218,18 @@ export class AuthService {
       randomNumber += chars.substring(rnum, rnum + 1);
     }
     return randomNumber;
+  }
+
+  // 랜덤 패스워드 생성
+  makeRandomPassword() {
+    const chars =
+      '0123456789abcdefghijklmnopqrstubwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const length = 12;
+    let randomPassword = '';
+    for (let i = 0; i < length; i++) {
+      const rnum = Math.floor(Math.random() * chars.length);
+      randomPassword += chars.substring(rnum, rnum + 1);
+    }
+    return randomPassword;
   }
 }

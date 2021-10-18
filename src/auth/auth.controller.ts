@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Header,
+  NotFoundException,
   Post,
   Query,
   Res,
@@ -17,6 +18,7 @@ import {
   ApiOkResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { lastValueFrom } from 'rxjs';
 import { Public } from 'src/decorators/public';
 import { TransformInterceptor } from 'src/interceptors/transform.interceptor';
 import { KakaoLogin } from 'src/kakao.service';
@@ -42,9 +44,14 @@ import {
   SendMessageResponse,
 } from '../models/auth.model';
 import { KakaoLoginBody, KakaoLoginDTO } from '../models/kakao.model';
-import { LogoutDTO, RefreshTokenDTO } from '../models/user.model';
+import {
+  IKakaoRegister,
+  LogoutDTO,
+  RefreshTokenDTO,
+} from '../models/user.model';
 import { AuthService } from './auth.service';
 import { JwtRefreshGuard } from './jwt-refresh.guard';
+import { KakaoAuthService } from './kakao-auth.service';
 
 @Controller('auth')
 export class AuthController {
@@ -53,6 +60,7 @@ export class AuthController {
     private userService: UserService,
     private configService: ConfigService,
     private kakaoLoginService: KakaoLogin,
+    private kakaoAuthService: KakaoAuthService,
   ) {}
 
   /**
@@ -200,7 +208,7 @@ export class AuthController {
       <div>
         <h1>카카오 로그인</h1>
 
-        <form action="/api/auth/kakao-login-process" method="GET">
+        <form action="/api/auth/request-auth-code-kakao" method="GET">
           <input type="submit" value="카카오로그인" />
         </form>
 
@@ -217,28 +225,27 @@ export class AuthController {
    * @returns
    */
   @Public()
-  @Get('/kakao-login-process')
+  @Get('/request-auth-code-kakao')
   @Header('Content-Type', 'text/html')
   kakaoLoginProcess(@Res() res): void {
     const kakaoApiKey = this.configService.get('KAKAO_REST_KEY');
-    const redirectUrl = 'http://localhost:5000/api/auth/kakao-login-redirect';
+    const redirectUrl = 'http://localhost:5000/api/auth/kakao-auth-redirect';
     const url = `https://kauth.kakao.com/oauth/authorize?client_id=${kakaoApiKey}&redirect_uri=${redirectUrl}&response_type=code`;
-
     return res.redirect(url);
   }
 
   /**
-   * @GET /api/auth/kakao-login-redirect
+   * @GET /api/auth/kakao-auth-redirect
    * @param query
    * @param res
    */
   @Public()
-  @Get('/kakao-login-redirect')
+  @Get('/kakao-auth-redirect')
   @Header('Content-Type', 'text/html')
-  kakaoLoginRedirect(@Query('code') code: string, @Res() res): void {
+  kakaoLoginRedirect(@Query('code') authCode: string, @Res() res): void {
     const kakaoApiKey = this.configService.get('KAKAO_REST_KEY');
-    const redirectUrl = 'http://localhost:5000/api/auth/kakao-login-redirect';
-    const _hostName = `https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id=${kakaoApiKey}&redirect_uri=${redirectUrl}&code=${code}`;
+    const redirectUrl = 'http://localhost:5000/api/auth/kakao-auth-redirect';
+    const _hostName = `https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id=${kakaoApiKey}&redirect_uri=${redirectUrl}&code=${authCode}`;
     const _headers = {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
@@ -248,7 +255,8 @@ export class AuthController {
     this.kakaoLoginService
       .login(_hostName, _headers)
       .then((e) => {
-        console.log(`TOKEN : ${e.data['access_token']}`);
+        console.log('access token is', e.data.access_token);
+        console.log('refresh token is', e.data.refresh_token);
         this.kakaoLoginService.setToken(e.data['access_token']);
         return res.send(`
           <div>
@@ -289,33 +297,53 @@ export class AuthController {
   }
 
   @Public()
-  @Post('/kakao-login')
+  @Post('/kakao/login')
   @ApiBody({ type: KakaoLoginBody })
   async kakaoLogin(
     @Body('kakao', ValidationPipe) body: KakaoLoginDTO,
-  ): Promise<CommonResponse<any>> {
-    const { token } = body;
-    console.log('token is ', token);
+  ): Promise<CommonResponse<LoginResponse>> {
+    const { accessToken } = body;
+    const userInfo = await lastValueFrom(
+      this.kakaoAuthService.getUserInfo(accessToken),
+    );
+    const kakaoId = userInfo.id;
+    const email = userInfo.kakao_account.email;
+    const username = userInfo.kakao_account.profile.nickname;
 
-    const kakaoApiKey = this.configService.get('KAKAO_REST_KEY');
-    const redirectUrl = 'http://localhost:5000/api/auth/kakao-login-redirect';
-    const _hostName = `https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id=${kakaoApiKey}&redirect_uri=${redirectUrl}&code=${token}`;
-    const _headers = {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-      },
-    };
+    try {
+      const user = await this.authService.validateKakaoUser(kakaoId);
+      const accessToken = this.authService.getJwtAccessToken(user.email); // Access token
+      const refreshToken = this.authService.getJwtRefreshToken(user.email); // Refresh token
+      await this.userService.setCurrentRefreshToken(refreshToken, user.email); // Save refresh token
 
-    this.kakaoLoginService
-      .login(_hostName, _headers)
-      .then((e) => {
-        console.log(`TOKEN : ${e.data['access_token']}`);
-        this.kakaoLoginService.setToken(e.data['access_token']);
-      })
-      .catch((err) => {
-        console.log('failed', err);
+      return CommonResponse.success<LoginResponse>({
+        email: user.email,
+        username: user.username,
+        accessToken,
+        refreshToken,
       });
+    } catch (err) {
+      console.log(err);
+      if (err instanceof NotFoundException) {
+        const registerData: IKakaoRegister = {
+          email,
+          password: this.authService.makeRandomPassword(),
+          username,
+          kakaoId,
+        };
+        const user = await this.authService.kakaoRegister(registerData);
 
-    return CommonResponse.success<any>('success!!');
+        const accessToken = this.authService.getJwtAccessToken(user.email); // Access token
+        const refreshToken = this.authService.getJwtRefreshToken(user.email); // Refresh token
+        await this.userService.setCurrentRefreshToken(refreshToken, user.email); // Save refresh token
+
+        return CommonResponse.success<LoginResponse>({
+          email: user.email,
+          username: user.username,
+          accessToken,
+          refreshToken,
+        });
+      }
+    }
   }
 }
