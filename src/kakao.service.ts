@@ -28,12 +28,4 @@ export class KakaoLogin {
     };
     return await this.http.post(_url, '', { headers: _header }).toPromise();
   }
-  async deleteLog(): Promise<any> {
-    const _url = 'https://kapi.kakao.com/v1/user/unlink';
-    const _header = {
-      Authorization: `bearer ${this.accessToken}`,
-    };
-
-    return await this.http.post(_url, '', { headers: _header }).toPromise();
-  }
 }

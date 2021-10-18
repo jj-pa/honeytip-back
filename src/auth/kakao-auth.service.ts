@@ -15,11 +15,9 @@ export class KakaoAuthService {
         Authorization: `bearer ${accessToken}`,
       },
     };
-    return this.httpService.post(
-      'https://kapi.kakao.com/v1/user/logout',
-      {},
-      config,
-    );
+    return this.httpService
+      .post('https://kapi.kakao.com/v1/user/logout', {}, config)
+      .pipe(map((response) => response.data));
   }
 
   getUserInfo(accessToken: string): Observable<KakaoProfileResponse> {

@@ -43,7 +43,12 @@ import {
   AuthResultResponse,
   SendMessageResponse,
 } from '../models/auth.model';
-import { KakaoLoginBody, KakaoLoginDTO } from '../models/kakao.model';
+import {
+  KakaoLoginBody,
+  KakaoLoginDTO,
+  KakaoLogoutBody,
+  KakaoLogoutDTO,
+} from '../models/kakao.model';
 import {
   IKakaoRegister,
   LogoutDTO,
@@ -197,22 +202,22 @@ export class AuthController {
   }
 
   /**
-   * @GET /api/auth/kakao-login-sample-page
+   * @GET /api/auth/kakao/login-page
    * @returns
    */
   @Public()
-  @Get('/kakao-login-sample-page')
+  @Get('/kakao/login-page')
   @Header('Content-Type', 'text/html')
   getKakaoLoginPage(): string {
     return `
       <div>
         <h1>카카오 로그인</h1>
 
-        <form action="/api/auth/request-auth-code-kakao" method="GET">
+        <form action="/api/auth/kakao/request-auth" method="GET">
           <input type="submit" value="카카오로그인" />
         </form>
 
-        <form action="/api/auth/kakao-logout" method="GET">
+        <form action="/api/auth/kakao/logout" method="GET">
           <input type="submit" value="카카오로그아웃 및 연결 끊기" />
         </form>
       </div>
@@ -220,31 +225,31 @@ export class AuthController {
   }
 
   /**
-   * @GET /api/auth/kakao-login-process
+   * @GET /api/auth/kakao/request-auth
    * @param res
    * @returns
    */
   @Public()
-  @Get('/request-auth-code-kakao')
+  @Get('/kakao/request-auth')
   @Header('Content-Type', 'text/html')
   kakaoLoginProcess(@Res() res): void {
     const kakaoApiKey = this.configService.get('KAKAO_REST_KEY');
-    const redirectUrl = 'http://localhost:5000/api/auth/kakao-auth-redirect';
+    const redirectUrl = 'http://localhost:5000/api/auth/kakao/redirect-auth';
     const url = `https://kauth.kakao.com/oauth/authorize?client_id=${kakaoApiKey}&redirect_uri=${redirectUrl}&response_type=code`;
     return res.redirect(url);
   }
 
   /**
-   * @GET /api/auth/kakao-auth-redirect
+   * @GET /api/auth/kakao/redirect-auth
    * @param query
    * @param res
    */
   @Public()
-  @Get('/kakao-auth-redirect')
+  @Get('/kakao/redirect-auth')
   @Header('Content-Type', 'text/html')
   kakaoLoginRedirect(@Query('code') authCode: string, @Res() res): void {
     const kakaoApiKey = this.configService.get('KAKAO_REST_KEY');
-    const redirectUrl = 'http://localhost:5000/api/auth/kakao-auth-redirect';
+    const redirectUrl = 'http://localhost:5000/api/auth/kakao/redirect-auth';
     const _hostName = `https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id=${kakaoApiKey}&redirect_uri=${redirectUrl}&code=${authCode}`;
     const _headers = {
       headers: {
@@ -262,7 +267,7 @@ export class AuthController {
           <div>
             <h2>축하합니다!</h2>
             <p>카카오 로그인 성공하였습니다 :)</p>
-            <a href="/api/auth/kakao-login-sample-page">메인으로</a>
+            <a href="/api/auth/kakao/login-page">메인으로</a>
           </div>
         `);
       })
@@ -273,27 +278,24 @@ export class AuthController {
   }
 
   /**
-   * @GET /api/auth/kakao-logout
+   * @GET /api/auth/kakao/logout
    * @param res
+   * @param body
+   * @returns
    */
   @Public()
-  @Get('/kakao-logout')
-  kakaoLogout(@Res() res): void {
-    console.log(`LOGOUT TOKEN : ${this.kakaoLoginService.accessToken}`);
-    this.kakaoLoginService
-      .logout()
-      .then((e) => {
-        return res.send(`
-        <div>
-          <h2>로그아웃 완료(토큰만료)</h2>
-          <a href="/api/auth/kakao-login-sample-page">메인 화면으로</a>
-        </div>
-      `);
-      })
-      .catch((e) => {
-        console.log(e);
-        return res.send('logout error');
-      });
+  @ApiBody({ type: KakaoLogoutBody })
+  @Post('/kakao/logout')
+  async kakaoLogout(
+    @Res() res,
+    @Body('kakao', ValidationPipe) body: KakaoLogoutDTO,
+  ): Promise<CommonResponse<any>> {
+    const { accessToken } = body;
+    const result = await lastValueFrom(
+      this.kakaoAuthService.logout(accessToken),
+    );
+
+    return CommonResponse.success<any>(result);
   }
 
   @Public()

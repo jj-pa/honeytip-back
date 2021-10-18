@@ -6,6 +6,14 @@ export class KakaoLoginBody {
   kakao: KakaoLoginDTO;
 }
 
+export class KakaoLogoutDTO {
+  accessToken: string;
+}
+
+export class KakaoLogoutBody {
+  kakao: KakaoLogoutDTO;
+}
+
 export interface KakaoLoginResponse {
   token: string;
 }
