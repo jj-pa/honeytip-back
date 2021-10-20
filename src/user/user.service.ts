@@ -19,7 +19,7 @@ import { IKakaoRegister } from '../models/user.model';
 export class UserService {
   constructor(
     @InjectRepository(UserEntity)
-    private userRepository: Repository<UserEntity>,
+    private readonly userRepository: Repository<UserEntity>,
   ) {}
 
   async setCurrentRefreshToken(refreshToken: string, email: string) {

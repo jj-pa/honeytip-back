@@ -28,7 +28,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly userService: UserService,
     @Inject(CACHE_MANAGER)
-    private cacheManager: CacheStore,
+    private readonly cacheManager: CacheStore,
   ) {}
 
   // 사용자 이메일/패스워드 체크

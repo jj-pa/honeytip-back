@@ -7,7 +7,7 @@ import { KakaoProfileResponse } from 'src/models/kakao.model';
 
 @Injectable()
 export class KakaoAuthService {
-  constructor(private httpService: HttpService) {}
+  constructor(private readonly httpService: HttpService) {}
 
   logout(accessToken: string): Observable<AxiosResponse<any>> {
     const config = {

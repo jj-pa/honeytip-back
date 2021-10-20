@@ -10,7 +10,7 @@ import { IS_PUBLIC_KEY } from 'src/decorators/public';
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   // reflector를 주입받아 @Public을 사용하는지 확인한다.
-  constructor(private reflector: Reflector) {
+  constructor(private readonly reflector: Reflector) {
     super();
   }
 
