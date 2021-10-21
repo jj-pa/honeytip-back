@@ -30,6 +30,10 @@ $ yarn start:dev
 $ yarn start:prod
 ```
 
+## GitBook
+
+https://jj-pa.gitbook.io/project-honeytip/
+
 ## References
 
 - [kakao-login](https://daddyprogrammer.org/post/1012/springboot2-rest-api-social-login-kakao/)
