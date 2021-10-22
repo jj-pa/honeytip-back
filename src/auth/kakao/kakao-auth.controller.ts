@@ -7,10 +7,11 @@ import {
   Post,
   Query,
   Res,
+  UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiBody } from '@nestjs/swagger';
+import { ApiBody, ApiHeaders } from '@nestjs/swagger';
 import { lastValueFrom } from 'rxjs';
 import { Public } from 'src/decorators/public';
 import { KakaoLogin } from 'src/kakao.service';
@@ -25,6 +26,7 @@ import { KakaoLoginDTO } from '../../models/kakao.model';
 import { CommonResponse } from '../../models/response.model';
 import { IKakaoRegister } from '../../models/user.model';
 import { AuthService } from '../auth.service';
+import { JwtRefreshGuard } from '../jwt-refresh.guard';
 import { KakaoAuthService } from './kakao-auth.service';
 
 @Controller('auth/kakao')
@@ -121,6 +123,14 @@ export class KakaoAuthController {
    */
   @Public()
   @ApiBody({ type: KakaoLogoutBody })
+  @UseGuards(JwtRefreshGuard)
+  @ApiHeaders([
+    {
+      name: 'refresh',
+      description: 'refresh token',
+      schema: { type: 'string' },
+    },
+  ])
   @Post('/logout')
   async kakaoLogout(
     @Res() res,

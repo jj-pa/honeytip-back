@@ -8,8 +8,8 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import {
-  ApiBearerAuth,
   ApiBody,
+  ApiHeaders,
   ApiOkResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -33,6 +33,18 @@ export class UserController {
    * @param username
    * @returns
    */
+  @ApiHeaders([
+    {
+      name: 'authentication',
+      description: 'authentication token',
+      schema: { type: 'string' },
+    },
+    {
+      name: 'refresh',
+      description: 'refresh token',
+      schema: { type: 'string' },
+    },
+  ])
   @ApiOkResponse({ description: 'Current user' })
   @ApiUnauthorizedResponse()
   @Get('/:username')
@@ -51,7 +63,18 @@ export class UserController {
    * @param data
    * @returns
    */
-  @ApiBearerAuth()
+  @ApiHeaders([
+    {
+      name: 'authentication',
+      description: 'authentication token',
+      schema: { type: 'string' },
+    },
+    {
+      name: 'refresh',
+      description: 'refresh token',
+      schema: { type: 'string' },
+    },
+  ])
   @ApiOkResponse({ description: 'Update current user' })
   @ApiUnauthorizedResponse()
   @ApiBody({ type: UpdateUserBody })

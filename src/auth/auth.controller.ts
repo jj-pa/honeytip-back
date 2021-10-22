@@ -10,7 +10,9 @@ import {
 import {
   ApiBody,
   ApiCreatedResponse,
+  ApiHeaders,
   ApiOkResponse,
+  ApiSecurity,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public';
@@ -82,7 +84,15 @@ export class AuthController {
   @Post('/logout')
   @UseGuards(JwtRefreshGuard)
   @ApiOkResponse({ description: 'User Logout' })
+  @ApiHeaders([
+    {
+      name: 'refresh',
+      description: 'refresh token',
+      schema: { type: 'string' },
+    },
+  ])
   @ApiBody({ type: LogoutBody })
+  @ApiSecurity('basic')
   @UseInterceptors(TransformInterceptor)
   async logOut(
     @Body('user', ValidationPipe) body: LogoutDTO,
@@ -101,6 +111,13 @@ export class AuthController {
   @Get('/refresh-token')
   @UseGuards(JwtRefreshGuard)
   @ApiOkResponse({ description: 'Refresh token' })
+  @ApiHeaders([
+    {
+      name: 'refresh',
+      description: 'refresh token',
+      schema: { type: 'string' },
+    },
+  ])
   @ApiBody({ type: RefreshTokenBody })
   @UseInterceptors(TransformInterceptor)
   async refresh(
