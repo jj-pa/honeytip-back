@@ -19,7 +19,7 @@ export class UserEntity extends AbstractEntity {
   @Exclude()
   password: string;
 
-  @Column()
+  @Column({ nullable: true })
   kakaoId: number;
 
   @Column({ nullable: true })

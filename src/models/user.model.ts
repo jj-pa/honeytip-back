@@ -16,12 +16,12 @@ import {
 export class LoginDTO {
   @IsEmail()
   @MinLength(4)
-  @ApiProperty()
+  @ApiProperty({ description: '사용자 이메일' })
   email: string;
 
   @IsString()
   @MinLength(4)
-  @ApiProperty()
+  @ApiProperty({ description: '사용자 패스워드' })
   password: string;
 }
 
@@ -32,6 +32,7 @@ export class LoginBody {
 
 export class LogoutDTO {
   @IsString()
+  @ApiProperty()
   email: string;
 }
 
@@ -42,6 +43,7 @@ export class LogoutBody {
 
 export class RefreshTokenDTO {
   @IsString()
+  @ApiProperty()
   email: string;
 }
 
@@ -63,6 +65,7 @@ export class RegisterDTO extends LoginDTO {
   @ApiProperty()
   username: string;
 
+  @ApiProperty()
   @IsPhoneNumber('KR', {
     message: (args: ValidationArguments) => {
       // 010-0000-0000
@@ -84,6 +87,7 @@ export class RegisterBody {
 export class UpdateUserDTO {
   @IsEmail()
   @IsOptional()
+  @ApiProperty()
   email: string;
 }
 

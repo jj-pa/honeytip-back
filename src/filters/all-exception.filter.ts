@@ -38,6 +38,15 @@ export class AllExceptionFilter implements ExceptionFilter {
           );
         break;
       default:
+        const httpException = exception as HttpException;
+        response
+          .status(status)
+          .json(
+            CommonResponse.fail(
+              httpException.message.toString(),
+              httpException.getStatus().toString(),
+            ),
+          );
         break;
     }
   }

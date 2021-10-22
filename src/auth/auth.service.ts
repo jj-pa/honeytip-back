@@ -41,7 +41,9 @@ export class AuthService {
       }
       return { ...user.toJSON() };
     } catch (err) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException(
+        '일치하는 사용자 정보를 찾지 못하였습니다.',
+      );
     }
   }
 
