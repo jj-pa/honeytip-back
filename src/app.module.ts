@@ -10,6 +10,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { KakaoAuthModule } from './auth/kakao/kakao-auth.module';
+import { LocalAuthModule } from './auth/local/local-auth.module';
 import { DatabaseConnectionService } from './database-connection.service';
 import { UserModule } from './user/user.module';
 
@@ -20,6 +21,7 @@ import { UserModule } from './user/user.module';
     }),
     ConfigModule.forRoot({
       validationSchema: Joi.object({
+        ADMIN_PASSWORD: Joi.string().required(),
         JWT_ACCESS_TOKEN_SECRET: Joi.string().required(),
         JWT_ACCESS_TOKEN_EXPIRATION_TIME: Joi.string().required(),
         JWT_REFRESH_TOKEN_SECRET: Joi.string().required(),
@@ -35,6 +37,7 @@ import { UserModule } from './user/user.module';
     TypeOrmModule.forRootAsync({ useClass: DatabaseConnectionService }),
     UserModule,
     AuthModule,
+    LocalAuthModule,
     KakaoAuthModule,
   ],
   controllers: [AppController],

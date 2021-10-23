@@ -1,3 +1,5 @@
+import { ApiProperty } from '@nestjs/swagger';
+
 export type ResponseObject<K extends string, T> = {
   [P in K]: T;
 };
@@ -22,9 +24,13 @@ export interface ICommonResponse<T> {
 }
 
 export class CommonResponse<T> {
+  @ApiProperty({ description: 'SUCCESS | FAIL' })
   private result: Result;
+  @ApiProperty({ description: 'API 데이터' })
   private data: T;
+  @ApiProperty({ description: 'API 메시지' })
   private message: string;
+  @ApiProperty({ description: '에러 내용' })
   private errorCode: string | null;
 
   constructor(builder) {
@@ -42,7 +48,7 @@ export class CommonResponse<T> {
     return CommonResponse.builder()
       .setResult(Result.SUCCESS)
       .setData(data)
-      .setMessage(message)
+      .setMessage(message || 'Success!!')
       .setErrorCode(null)
       .build();
   }
@@ -57,12 +63,14 @@ export class CommonResponse<T> {
       return CommonResponse.builder()
         .setResult(Result.FAIL)
         .setMessage(error)
+        .setData(null)
         .setErrorCode(getErrorName(error))
         .build();
     } else {
       return CommonResponse.builder()
         .setResult(Result.FAIL)
         .setMessage(message)
+        .setData(null)
         .setErrorCode(errorCode)
         .build();
     }

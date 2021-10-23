@@ -1,11 +1,11 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { KakaoLogin } from 'src/kakao.service';
+import { AuthModule } from 'src/auth/auth.module';
 import { UserModule } from 'src/user/user.module';
-import { AuthModule } from '../auth.module';
 import { KakaoAuthController } from './kakao-auth.controller';
 import { KakaoAuthService } from './kakao-auth.service';
+import { KakaoLogin } from './kakao.service';
 
 @Module({
   imports: [

@@ -9,10 +9,12 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiDefaultResponse,
   ApiHeaders,
-  ApiOkResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { User } from 'src/auth/user.decorator';
+import { UserEntity } from 'src/entities/user.entity';
 import { TransformInterceptor } from 'src/interceptors/transform.interceptor';
 import { CommonResponse } from 'src/models/response.model';
 import {
@@ -20,8 +22,6 @@ import {
   UpdateUserDTO,
   UserResponse,
 } from 'src/models/user.model';
-import { User } from '../auth/user.decorator';
-import { UserEntity } from '../entities/user.entity';
 import { UserService } from './user.service';
 
 @Controller('user')
@@ -36,16 +36,15 @@ export class UserController {
   @ApiHeaders([
     {
       name: 'authentication',
-      description: 'authentication token',
+      description: 'Access token',
       schema: { type: 'string' },
-    },
-    {
-      name: 'refresh',
-      description: 'refresh token',
-      schema: { type: 'string' },
+      required: true,
     },
   ])
-  @ApiOkResponse({ description: 'Current user' })
+  @ApiDefaultResponse({
+    description: 'Current user',
+    type: CommonResponse,
+  })
   @ApiUnauthorizedResponse()
   @Get('/:username')
   @UseInterceptors(TransformInterceptor)
@@ -66,16 +65,15 @@ export class UserController {
   @ApiHeaders([
     {
       name: 'authentication',
-      description: 'authentication token',
+      description: 'Access token',
       schema: { type: 'string' },
-    },
-    {
-      name: 'refresh',
-      description: 'refresh token',
-      schema: { type: 'string' },
+      required: true,
     },
   ])
-  @ApiOkResponse({ description: 'Update current user' })
+  @ApiDefaultResponse({
+    description: 'Update current user',
+    type: CommonResponse,
+  })
   @ApiUnauthorizedResponse()
   @ApiBody({ type: UpdateUserBody })
   @Put()

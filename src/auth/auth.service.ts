@@ -1,25 +1,16 @@
 import {
   CacheStore,
   CACHE_MANAGER,
-  ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
-  NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
 import * as crypto from 'crypto';
+import { UpdateUserDTO, UserResponse } from 'src/models/user.model';
 import { UserService } from 'src/user/user.service';
-import {
-  IKakaoRegister,
-  LoginDTO,
-  RegisterDTO,
-  UpdateUserDTO,
-  UserResponse,
-} from '../models/user.model';
 
 @Injectable()
 export class AuthService {
@@ -30,65 +21,6 @@ export class AuthService {
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: CacheStore,
   ) {}
-
-  // 사용자 이메일/패스워드 체크
-  async validateUser({ email, password }: LoginDTO): Promise<UserResponse> {
-    try {
-      const user = await this.userService.findByEmail(email);
-      const isValid = await user.comparePassword(password);
-      if (!isValid) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
-      return { ...user.toJSON() };
-    } catch (err) {
-      throw new UnauthorizedException(
-        '일치하는 사용자 정보를 찾지 못하였습니다.',
-      );
-    }
-  }
-
-  // 카카오 사용자 확인
-  async validateKakaoUser(kakaoId: number): Promise<UserResponse> {
-    try {
-      const user = await this.userService.findByKakaoId(kakaoId);
-      if (!user) {
-        throw new NotFoundException('Not found user');
-      }
-      return { ...user.toJSON() };
-    } catch (err) {
-      if (err instanceof NotFoundException) throw new NotFoundException();
-
-      throw new UnauthorizedException();
-    }
-  }
-
-  // 회원가입
-  async register(credentials: RegisterDTO): Promise<UserResponse> {
-    try {
-      const user = await this.userService.create(credentials);
-      await user.save();
-      return { ...user.toJSON() };
-    } catch (err) {
-      if (err.code === '23505') {
-        throw new ConflictException('Username has already been taken');
-      }
-      throw new InternalServerErrorException();
-    }
-  }
-
-  // 카카오 회원가입
-  async kakaoRegister(credentials: IKakaoRegister): Promise<UserResponse> {
-    try {
-      const user = await this.userService.kakaoCreate(credentials);
-      await user.save();
-      return { ...user.toJSON() };
-    } catch (err) {
-      if (err.code === '23505') {
-        throw new ConflictException('Username has already been taken');
-      }
-      throw new InternalServerErrorException();
-    }
-  }
 
   // 사용자 조회 (username)
   async findCurrentUser(username: string): Promise<UserResponse> {

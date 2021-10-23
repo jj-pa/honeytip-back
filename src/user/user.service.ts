@@ -6,14 +6,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
+import { UserEntity } from 'src/entities/user.entity';
 import {
+  IKakaoRegister,
   RegisterDTO,
   UpdateUserDTO,
   UserResponse,
 } from 'src/models/user.model';
 import { Repository } from 'typeorm';
-import { UserEntity } from '../entities/user.entity';
-import { IKakaoRegister } from '../models/user.model';
 
 @Injectable()
 export class UserService {

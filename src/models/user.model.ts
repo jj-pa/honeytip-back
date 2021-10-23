@@ -13,6 +13,7 @@ import {
   ValidationArguments,
 } from 'class-validator';
 
+// Login
 export class LoginDTO {
   @IsEmail()
   @MinLength(4)
@@ -24,48 +25,48 @@ export class LoginDTO {
   @ApiProperty({ description: '사용자 패스워드' })
   password: string;
 }
-
 export class LoginBody {
-  @ApiProperty()
+  @ApiProperty({ description: '로그인 요청 바디' })
   user: LoginDTO;
 }
 
+// Logout
 export class LogoutDTO {
   @IsString()
-  @ApiProperty()
+  @ApiProperty({ description: '사용자 이메일' })
   email: string;
 }
-
 export class LogoutBody {
-  @ApiProperty()
+  @ApiProperty({ description: '로그아웃 요청 바디' })
   user: LogoutDTO;
 }
 
+// Refresh token
 export class RefreshTokenDTO {
   @IsString()
-  @ApiProperty()
+  @ApiProperty({ description: '사용자 이메일' })
   email: string;
 }
-
 export class RefreshTokenBody {
-  @ApiProperty()
+  @ApiProperty({ description: '리프레시 요청 바디' })
   user: RefreshTokenDTO;
 }
 
+// Register
 export class RegisterDTO extends LoginDTO {
   @IsEmail()
   @IsString()
   @MinLength(4)
-  @ApiProperty()
+  @ApiProperty({ description: '사용자 이메일' })
   email: string;
 
   @IsString()
   @MinLength(4)
   @MaxLength(20)
-  @ApiProperty()
+  @ApiProperty({ description: '사용자 닉네임' })
   username: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: '사용자 연락처' })
   @IsPhoneNumber('KR', {
     message: (args: ValidationArguments) => {
       // 010-0000-0000
@@ -78,24 +79,24 @@ export class RegisterDTO extends LoginDTO {
   })
   phoneNumber: string;
 }
-
 export class RegisterBody {
-  @ApiProperty()
+  @ApiProperty({ description: '회원가입 요청 바디' })
   user: RegisterDTO;
 }
 
+// Update user
 export class UpdateUserDTO {
   @IsEmail()
   @IsOptional()
-  @ApiProperty()
+  @ApiProperty({ description: '사용자 이메일' })
   email: string;
 }
-
 export class UpdateUserBody {
-  @ApiProperty()
+  @ApiProperty({ description: '사용자 정보 수정 요청 바디' })
   user: UpdateUserDTO;
 }
 
+// Kakao Register
 export interface IKakaoRegister {
   email: string;
   password: string;
@@ -103,20 +104,24 @@ export interface IKakaoRegister {
   kakaoId: number;
 }
 
+// JWT auth payload (find by email)
 export interface AuthPayload {
   email: string;
 }
 
+// User entity to json response
 export interface UserResponse {
   email: string;
   username: string;
 }
 
+// Login response
 export interface LoginResponse extends UserResponse {
   accessToken: string;
   refreshToken: string;
 }
 
+// Refresh response
 export interface RefreshTokenResponse extends AuthPayload {
   accessToken: string;
 }

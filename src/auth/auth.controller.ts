@@ -7,29 +7,9 @@ import {
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
-import {
-  ApiBody,
-  ApiCreatedResponse,
-  ApiHeaders,
-  ApiOkResponse,
-  ApiSecurity,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+import { ApiBody, ApiDefaultResponse, ApiHeaders } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public';
 import { TransformInterceptor } from 'src/interceptors/transform.interceptor';
-import { CommonResponse } from 'src/models/response.model';
-import {
-  LoginBody,
-  LoginDTO,
-  LoginResponse,
-  LogoutBody,
-  RefreshTokenBody,
-  RefreshTokenResponse,
-  RegisterBody,
-  RegisterDTO,
-  UserResponse,
-} from 'src/models/user.model';
-import { UserService } from 'src/user/user.service';
 import {
   AuthCheckBody,
   AuthCheckDTO,
@@ -37,70 +17,19 @@ import {
   AuthMessageDTO,
   AuthResultResponse,
   SendMessageResponse,
-} from '../models/auth.model';
-import { LogoutDTO, RefreshTokenDTO } from '../models/user.model';
+} from 'src/models/auth.model';
+import { CommonResponse } from 'src/models/response.model';
+import {
+  RefreshTokenBody,
+  RefreshTokenDTO,
+  RefreshTokenResponse,
+} from 'src/models/user.model';
 import { AuthService } from './auth.service';
 import { JwtRefreshGuard } from './jwt-refresh.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly userService: UserService,
-  ) {}
-
-  /**
-   * @POST /api/auth/login
-   * @param credentials
-   * @returns
-   */
-  @Public()
-  @Post('/login')
-  @ApiOkResponse({ description: 'User Login' })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-  @ApiBody({ type: LoginBody })
-  @UseInterceptors(TransformInterceptor)
-  async login(
-    @Body('user', ValidationPipe) body: LoginDTO,
-  ): Promise<CommonResponse<LoginResponse>> {
-    const user = await this.authService.validateUser(body); // Validate email and password
-    const accessToken = this.authService.getJwtAccessToken(user.email); // Access token
-    const refreshToken = this.authService.getJwtRefreshToken(user.email); // Refresh token
-    await this.userService.setCurrentRefreshToken(refreshToken, user.email); // Save refresh token
-
-    return CommonResponse.success<LoginResponse>({
-      email: user.email,
-      username: user.username,
-      accessToken,
-      refreshToken,
-    });
-  }
-
-  /**
-   * @POST /api/auth/logout
-   * @param req
-   */
-  @Public()
-  @Post('/logout')
-  @UseGuards(JwtRefreshGuard)
-  @ApiOkResponse({ description: 'User Logout' })
-  @ApiHeaders([
-    {
-      name: 'refresh',
-      description: 'refresh token',
-      schema: { type: 'string' },
-    },
-  ])
-  @ApiBody({ type: LogoutBody })
-  @ApiSecurity('basic')
-  @UseInterceptors(TransformInterceptor)
-  async logOut(
-    @Body('user', ValidationPipe) body: LogoutDTO,
-  ): Promise<CommonResponse<null>> {
-    const { email } = body;
-    await this.userService.removeRefreshToken(email);
-    return CommonResponse.success(null);
-  }
+  constructor(private readonly authService: AuthService) {}
 
   /**
    * @GET /api/auth/refresh-token
@@ -110,7 +39,10 @@ export class AuthController {
   @Public()
   @Get('/refresh-token')
   @UseGuards(JwtRefreshGuard)
-  @ApiOkResponse({ description: 'Refresh token' })
+  @ApiDefaultResponse({
+    description: 'Refresh token',
+    type: CommonResponse,
+  })
   @ApiHeaders([
     {
       name: 'refresh',
@@ -133,31 +65,16 @@ export class AuthController {
   }
 
   /**
-   * @POST /api/auth/signup
-   * @param credentials
-   * @returns
-   */
-  @Public()
-  @Post('/signup')
-  @ApiCreatedResponse({ description: 'User registration' })
-  @ApiBody({ type: RegisterBody })
-  @UseInterceptors(TransformInterceptor)
-  async register(
-    @Body('user', ValidationPipe) body: RegisterDTO,
-  ): Promise<CommonResponse<UserResponse>> {
-    const user = await this.authService.register(body);
-
-    return CommonResponse.success<UserResponse>(user);
-  }
-
-  /**
    * @POST /api/auth/send-sms-code
    * @param authBody
    * @returns
    */
   @Public()
   @Post('/send-sms-code')
-  @ApiCreatedResponse({ description: 'Authentication SMS' })
+  @ApiDefaultResponse({
+    description: 'Authentication SMS',
+    type: CommonResponse,
+  })
   @ApiBody({ type: AuthMessageBody })
   @UseInterceptors(TransformInterceptor)
   async sendSms(
@@ -181,7 +98,10 @@ export class AuthController {
    */
   @Public()
   @Post('/validate-sms-code')
-  @ApiCreatedResponse({ description: 'Validate SMS' })
+  @ApiDefaultResponse({
+    description: 'Validate SMS',
+    type: CommonResponse,
+  })
   @ApiBody({ type: AuthCheckBody })
   @UseInterceptors(TransformInterceptor)
   async checkSms(
