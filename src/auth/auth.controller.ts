@@ -7,7 +7,12 @@ import {
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiBody, ApiDefaultResponse, ApiHeaders } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiDefaultResponse,
+  ApiHeaders,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Public } from 'src/decorators/public';
 import { TransformInterceptor } from 'src/interceptors/transform.interceptor';
 import {
@@ -27,6 +32,7 @@ import {
 import { AuthService } from './auth.service';
 import { JwtRefreshGuard } from './jwt-refresh.guard';
 
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

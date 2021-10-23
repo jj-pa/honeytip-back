@@ -11,6 +11,7 @@ import {
   ApiBody,
   ApiDefaultResponse,
   ApiHeaders,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { User } from 'src/auth/user.decorator';
@@ -24,6 +25,7 @@ import {
 } from 'src/models/user.model';
 import { UserService } from './user.service';
 
+@ApiTags('User')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}

@@ -11,6 +11,7 @@ import {
   ApiDefaultResponse,
   ApiHeaders,
   ApiSecurity,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuthService } from 'src/auth/auth.service';
@@ -24,10 +25,14 @@ import {
   LoginResponse,
   LogoutBody,
   LogoutDTO,
+  RegisterBody,
+  RegisterDTO,
+  UserResponse,
 } from 'src/models/user.model';
 import { UserService } from 'src/user/user.service';
 import { LocalAuthService } from './local-auth.service';
 
+@ApiTags('Local Authentication')
 @Controller('auth/local')
 export class LocalAuthController {
   constructor(
@@ -35,6 +40,27 @@ export class LocalAuthController {
     private readonly authService: AuthService,
     private readonly localAuthService: LocalAuthService,
   ) {}
+
+  /**
+   * @POST /api/auth/local/signup
+   * @param credentials
+   * @returns
+   */
+  @Public()
+  @Post('/signup')
+  @ApiDefaultResponse({
+    description: 'User registration',
+    type: CommonResponse,
+  })
+  @ApiBody({ type: RegisterBody })
+  @UseInterceptors(TransformInterceptor)
+  async register(
+    @Body('user', ValidationPipe) body: RegisterDTO,
+  ): Promise<CommonResponse<UserResponse>> {
+    const user = await this.localAuthService.register(body);
+
+    return CommonResponse.success<UserResponse>(user);
+  }
 
   /**
    * @POST /api/auth/local/login

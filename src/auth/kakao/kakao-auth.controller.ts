@@ -11,7 +11,12 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiBody, ApiDefaultResponse, ApiHeaders } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiDefaultResponse,
+  ApiHeaders,
+  ApiTags,
+} from '@nestjs/swagger';
 import { lastValueFrom } from 'rxjs';
 import { AuthService } from 'src/auth/auth.service';
 import { JwtRefreshGuard } from 'src/auth/jwt-refresh.guard';
@@ -28,6 +33,7 @@ import { UserService } from 'src/user/user.service';
 import { KakaoAuthService } from './kakao-auth.service';
 import { KakaoLogin } from './kakao.service';
 
+@ApiTags('Kakao Authentication')
 @Controller('auth/kakao')
 export class KakaoAuthController {
   constructor(
