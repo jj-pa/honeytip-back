@@ -2,7 +2,7 @@
 create table tb_user
 (
     id bigint auto_increment primary key comment 'ID',
-    user_token varchar(255) not null comment 'user_token'
+    user_token varchar(255) not null comment 'user_token',
     email varchar(255) null,
     username varchar(255) null,
     kakao_id varchar(255) null,
