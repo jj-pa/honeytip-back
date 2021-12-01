@@ -16,4 +16,8 @@ public class UserFacade {
         var userToken = userService.registerUser(registerUser);
         return userToken;
     }
+
+    public void saveRole(UserCommand.SaveRole role) {
+        userService.saveRole(role);
+    }
 }

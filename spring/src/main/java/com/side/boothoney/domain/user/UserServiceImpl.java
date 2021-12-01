@@ -17,4 +17,10 @@ public class UserServiceImpl implements UserService {
         User user = userStore.store(registerUser.toEntity());
         return user.getUserToken();
     }
+
+    @Override
+    @Transactional
+    public void saveRole(UserCommand.SaveRole saveRole) {
+        Role role = userStore.store(saveRole.toEntity());
+    }
 }

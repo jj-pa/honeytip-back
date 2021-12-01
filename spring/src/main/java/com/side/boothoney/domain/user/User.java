@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.Collection;
 
 @Slf4j
 @Getter
@@ -31,6 +33,9 @@ public class User extends AbstractEntity {
     private String currentHashedRefreshToken;
 
     private String kakaoId;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    private Collection<Role> roles = new ArrayList<>();
 
     @Builder
     public User(

@@ -18,4 +18,17 @@ public class UserCommand {
                     .build();
         }
     }
+
+    @Getter
+    @Builder
+    @ToString
+    public static class SaveRole {
+        private final String name;
+
+        public Role toEntity() {
+            return Role.builder()
+                    .name(name)
+                    .build();
+        }
+    }
 }
